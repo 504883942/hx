@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="screen-orientation" content="portrait">
+    <meta name="x5-orientation" content="portrait">
+    <meta name="viewport" content="height=device-height,width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=0">
+    <title>心灵感应</title>
+    <link rel="stylesheet" href="css/reset.css" />
+    <link rel="stylesheet" href="css/content.css" />
+</head>
+<body>
+<div class="logo">碰碰出品</div>
+<div style="height: 3rem"></div>
+<div class="content">
+    <div class="drawbox">
+        <canvas id="leftpart" class="leftpart" width="123" height="248"></canvas><div class="rightpart rightpart1"></div>
+    </div>
+    <div class="buttonbox">
+        <button class="restart" id="redraw">再画一次</button>
+        <button class="share"id="share">完成</button>
+    </div>
+
+</div>
+<div id="introduce" class="introduce" style="display: none;">
+    <img class="shareintro" src="images/shareintro.png">
+    <p style="font-size: 1rem;color: #eeeeee;margin: 15rem 2.5rem 0rem 2.5rem;border:1px solid white;padding: 5px;text-align: center;" id="cancel">画另一半心</p>
+</div>
+</body>
+</html>
+<script src="http://p1.cdn.pengpengla.com/sdk/2.2.0/js/seed.js"></script>
+<script>
+    var urlstr=window.location.search;
+    var sleftpointx_start=urlstr.indexOf("sleftpointx=")+"sleftpointx=".length;
+    var sleftpointx_end=urlstr.indexOf("&",sleftpointx_start);
+    var sleftpointx=urlstr.substring(sleftpointx_start,sleftpointx_end).split(',');
+    var sleftpointy_start=urlstr.indexOf("sleftpointy=")+"sleftpointy=".length;
+    var sleftpointy_end=urlstr.length;
+    var sleftpointy=urlstr.substring(sleftpointy_start,sleftpointy_end).split(',');
+
+    sleftpointx=sleftpointx.map(i => +i);
+    sleftpointy=sleftpointy.map(i => +i);
+
+    function getfont (){
+        var html1 = document.documentElement;
+        var screen = html1.clientWidth;
+        html1.style.fontSize = 0.0625*screen+'px';
+        magnification=(screen/320);
+    }
+
+    $("#share").on("click",function(e){
+
+        var introduce = document.getElementById("introduce");
+        introduce.style.display = "";
+
+        window.location.href = 'share.html?sleftpointx='+sleftpointx+'&sleftpointy='+sleftpointy;
+    });
+    $("#introduce").on("click",function(e){
+        var introduce = document.getElementById("introduce");
+        introduce.style.display = "none";
+    });
+    $("#cancel").on("click",function(e){
+        window.location.href = 'drawright.html?sleftpointx='+sleftpointx+'&sleftpointy='+sleftpointy;
+    });
+    $("#redraw").on("click",function(e){
+        window.location.href = 'index.html?redraw';
+    });
+    //    禁止触屏滑动
+    document.addEventListener("touchmove", function (e) {
+        e.preventDefault();
+    }, false);
+
+    window.onload = function(){
+        getfont();
+        window.onresize = function() {
+            getfont();
+        }
+
+        var introduce = document.getElementById("introduce");
+        introduce.style.display = "";
+
+        var oCL = document.getElementById('leftpart');
+        var oGCL = oCL.getContext('2d');
+
+        oGCL.moveTo(sleftpointx[0],sleftpointy[0]);
+        for(var i=1;i<sleftpointx.length;i++){
+            oGCL.lineTo(sleftpointx[i],sleftpointy[i]);
+        };
+        oGCL.stroke();
+
+        oCL.ontouchstart = function(ev){
+            var ev = ev || window.event;
+            oGCL.moveTo((ev.targetTouches[0].clientX-oCL.offsetLeft)/magnification,(ev.targetTouches[0].clientY-oCL.offsetTop)/magnification);
+
+            document.ontouchmove = function(ev){
+                var ev = ev || window.event;
+                oGCL.lineTo((ev.targetTouches[0].clientX-oCL.offsetLeft)/magnification,(ev.targetTouches[0].clientY-oCL.offsetTop)/magnification);
+                oGCL.stroke();
+                if((((ev.targetTouches[0].clientX-oCL.offsetLeft)/magnification)<=123)&&(((ev.targetTouches[0].clientX-oCL.offsetLeft)/magnification)>=0)){
+                    var obj={
+                        lx:(ev.targetTouches[0].clientX-oCL.offsetLeft)/magnification,
+                        ly:(ev.targetTouches[0].clientY-oCL.offsetTop)/magnification
+                    }
+                }
+                sleftpointx.push(obj.lx);
+                sleftpointy.push(obj.ly);
+            };
+            document.ontouchend = function(){
+                document.ontouchmove = null;
+                document.ontouchend = null;
+            };
+        };
+    };
+
+</script>

@@ -1,0 +1,172 @@
+﻿<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="screen-orientation" content="portrait">
+    <meta name="x5-orientation" content="portrait">
+    <meta name="viewport" content="height=device-height,width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=0">
+    <title>心灵感应</title>
+    <link rel="stylesheet" href="css/reset.css" />
+    <link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/content.css" />
+</head>
+<body>
+<div class="logo">LOGO</div>
+<div class="content">
+    <div class="drawbox">
+        <canvas class="whole" width="248" height="248" id="whole"></canvas>
+    </div>
+    <p style="text-align: center;background-color: #ede7f3;font-size:0.7rem;margin-top: 1.3rem;" id="resultword"></p>
+    <div class="myresult">
+        <img class="myhead" id="myhead">
+        <div class="date">
+            <div class="fitdegree">契合度<lable id="resultpercent"></lable></div>
+            <div class="percentbar">
+                <div class="progress">
+                    <div id="percentbar" class="progress-bar progress-bar-info" role="progressbar"
+                         aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <span class="myname" id="myname"></span>
+                <span class="friendname" id="friendname"></span>
+            </div>
+        </div>
+        <img class="friendhead" id="friendhead">
+    </div>
+    <div class="buttonbox">
+        <button class="restart" id="newgame">我也要画</button>
+        <button class="share" id="moregame">更多好玩</button>
+    </div>
+    <img class="ranking" src="images/ranking.png">
+    <div class="rankinglist" id="rankinglist"></div>
+</div>
+</body>
+</html>
+<script src="js/percentbar.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.1/jquery.min.js"></script>
+<script src="http://p1.cdn.pengpengla.com/sdk/2.2.0/js/seed.js"></script>
+<script>
+    // 获取左右两边数据及相似度
+    var urlstr=window.location.search;
+    var sleftpointx_start=urlstr.indexOf("sleftpointx=")+"sleftpointx=".length;
+    var sleftpointx_end=urlstr.indexOf("&",sleftpointx_start);
+    var sleftpointx=urlstr.substring(sleftpointx_start,sleftpointx_end).split(',');
+    var sleftpointy_start=urlstr.indexOf("sleftpointy=")+"sleftpointy=".length;
+    var sleftpointy_end=urlstr.indexOf("&",sleftpointy_start);
+    var sleftpointy=urlstr.substring(sleftpointy_start,sleftpointy_end).split(',');
+    var srightpointx_start=urlstr.indexOf("srightpointx=")+"srightpointx=".length;
+    var srightpointx_end=urlstr.indexOf("&",srightpointx_start);
+    var srightpointx=urlstr.substring(srightpointx_start,srightpointx_end).split(',');
+    var srightpointy_start=urlstr.indexOf("srightpointy=")+"srightpointy=".length;
+    var srightpointy_end=urlstr.indexOf("&",srightpointy_start);
+    var srightpointy=urlstr.substring(srightpointy_start,srightpointy_end).split(',');
+    var similarity_start=urlstr.indexOf("similarity=")+"similarity=".length;
+    var similarity_end=urlstr.length;
+    var similarity=urlstr.substring(similarity_start,similarity_end);
+
+    // 转换成数字类型
+    sleftpointx=sleftpointx.map(i => +i);
+    sleftpointy=sleftpointy.map(i => +i);
+    srightpointx=srightpointx.map(i => +i);
+    srightpointy=srightpointy.map(i => +i);
+
+    function getfont (){
+        var html1 = document.documentElement;
+        var screen = html1.clientWidth;
+        html1.style.fontSize = 0.0625*screen+'px';
+        magnification=(screen/320);
+    }
+    // 画出整幅图
+    function drawwhole(sleftpointx,sleftpointy,srightpointx,srightpointy,canvasId){
+        var oCW = document.getElementById(canvasId);
+        var oGCW = oCW.getContext('2d');
+        var ev = ev || window.event;
+        oGCW.moveTo(sleftpointx[0],sleftpointy[0]);
+        for(var i=1;i<sleftpointx.length;i++){
+            oGCW.lineTo(sleftpointx[i],sleftpointy[i]);
+        };
+        oGCW.stroke();
+        oGCW.moveTo(248-srightpointx[0],srightpointy[0]);
+        for(var i=1;i<srightpointx.length;i++){
+            oGCW.lineTo(248-srightpointx[i],srightpointy[i]);
+        };
+        oGCW.stroke();
+    }
+
+    // 显示结果
+    function displayresult(similarity,resultpercentid,percentbarid,resultwordid){
+        
+        if(similarity<0){
+            similarity = 0;
+            document.getElementById(resultwordid).innerText='在莫大的阴影里，我已然找不到你。。。';
+        }
+        else if((similarity>=0)&&(similarity<=50)){
+            document.getElementById(resultwordid).innerText='点赞之交，难道说的就是我们？！';
+        }
+        else if((similarity>50)&&(similarity<=80)){
+            document.getElementById(resultwordid).innerText='我们就是心心相印的一对儿！';
+        }
+        else{
+            document.getElementById(resultwordid).innerText='传说中遗失的半颗心，我已经找到了！！';
+        }
+        document.getElementById(resultpercentid).innerText=similarity+'%';
+        document.getElementById(percentbarid).style.width=similarity+'%';
+
+    }
+    
+    $('#moregame').on('click',function(e){
+        window.location.href = 'http://www.pengpengla.com/web/index.html';
+    });
+
+    window.onload = function(){
+        //定义rem
+        getfont();
+        window.onresize = function() {
+            getfont();
+        }
+
+        drawwhole(sleftpointx,sleftpointy,srightpointx,srightpointy,"whole");
+        document.getElementById("myhead").src='images/myhead.jpg';
+        document.getElementById("myname").innerText='(●ˇ∀ˇ●)';
+        document.getElementById('friendhead').src='images/friendhead.jpg';
+        document.getElementById('friendname').innerText='o(^▽^)o';
+        
+        displayresult(similarity,"resultpercent","percentbar","resultword");
+
+        
+
+        //排行榜
+        $("#rankinglist").append("  <div class='rank1'>"+
+                "<div class='friend1'>"+
+                "<img class='userhead' id='userhead0'>"+
+                "<div class='result1'>"+
+                "<p class='username' id='username0'></p>"+
+                "<div class='date1'>"+
+                "<lable>契合度</lable>"+
+                "<div class='percentbar1'>"+
+                "<div class='progress'>"+
+                "<div id='percentbar10' class='progress-bar progress-bar-warning' role='progressbar' aria-valuenow='60' aria-valuemin='0' aria-valuemax='100'>"+
+                "</div>"+
+                "</div>"+
+                "</div>"+
+                "<label id='resultpercent10'></label>"+
+                "</div>"+
+                "</div>"+
+                "<p style='text-align: center;background-color: #ede7f3;margin-top:2px;font-size: 10px;' id='resultword10'></p>"+
+                "</div>"+
+                "<canvas class='historyheart' width='248' height='248' id='historyheart0'></canvas>"+
+                "</div>");
+
+        document.getElementById('userhead0').src='images/friendhead.jpg';
+        document.getElementById('username0').innerText='o(^▽^)o';
+        displayresult(similarity,'resultpercent10','percentbar10','resultword10');
+
+        drawwhole(sleftpointx,sleftpointy,srightpointx,srightpointy,'historyheart0');
+
+        $("#newgame").on("click",function(e){
+            window.location.href = "index.html";
+        });
+    }
+</script>
